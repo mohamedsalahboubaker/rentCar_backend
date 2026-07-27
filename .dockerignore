@@ -1,0 +1,21 @@
+# Ignorer les fichiers inutiles
+.git
+.gitignore
+README.md
+*.log
+*.tmp
+*.swp
+target/
+.idea/
+*.iml
+.vscode/
+.mvn/
+mvnw
+mvnw.cmd
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Ignorer les fichiers de configuration locaux
+application-local.yml
+application-dev.yml
