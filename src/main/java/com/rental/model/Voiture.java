@@ -1,5 +1,6 @@
 package com.rental.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.rental.model.enums.Transmission;
 import com.rental.model.enums.VoitureStatus;
 import jakarta.persistence.*;
@@ -57,8 +58,11 @@ public class Voiture {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @JsonIgnore
+
     @OneToMany(mappedBy = "voiture", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Reservation> reservations = new ArrayList<>();
+    @JsonIgnore
 
     @OneToMany(mappedBy = "voiture", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<PieceReparee> piecesReparees = new ArrayList<>();

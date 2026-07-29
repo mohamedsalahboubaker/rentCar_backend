@@ -1,6 +1,7 @@
 package com.rental.services;
 
 import com.rental.model.Stock;
+import com.rental.model.enums.StockType;
 import com.rental.repositories.StockRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,13 +30,13 @@ public class StockService {
     }
 
     // Récupérer un stock par type
-    public Optional<Stock> getStockByType(String type) {
+    public Optional<Stock> getStockByType(StockType type) {
         return stockRepository.findByType(type);
     }
 
     // Ajouter des quantités
     @Transactional
-    public Stock addQuantity(String type, Integer quantity) {
+    public Stock addQuantity(StockType type, Integer quantity) {
         Stock stock = stockRepository.findByType(type)
                 .orElseThrow(() -> new RuntimeException("Type de stock non trouvé: " + type));
 
@@ -45,7 +46,7 @@ public class StockService {
 
     // Retirer des quantités
     @Transactional
-    public Stock removeQuantity(String type, Integer quantity) {
+    public Stock removeQuantity(StockType type, Integer quantity) {
         Stock stock = stockRepository.findByType(type)
                 .orElseThrow(() -> new RuntimeException("Type de stock non trouvé: " + type));
 
@@ -57,21 +58,21 @@ public class StockService {
         return stockRepository.save(stock);
     }
 
-    // Retirer 1 unité (pour essuie-glace, huile, eau radiateur)
+    // Retirer 1 unité
     @Transactional
-    public Stock removeOne(String type) {
+    public Stock removeOne(StockType type) {
         return removeQuantity(type, 1);
     }
 
     // Ajouter 2 unités (spécial pour eau essuie-glace)
     @Transactional
-    public Stock addTwo(String type) {
+    public Stock addTwo(StockType type) {
         return addQuantity(type, 2);
     }
 
     // Mettre à jour le seuil d'alerte
     @Transactional
-    public Stock updateSeuilAlerte(String type, Integer seuil) {
+    public Stock updateSeuilAlerte(StockType type, Integer seuil) {
         Stock stock = stockRepository.findByType(type)
                 .orElseThrow(() -> new RuntimeException("Type de stock non trouvé: " + type));
 
@@ -85,7 +86,7 @@ public class StockService {
     }
 
     // Vérifier si un stock est en alerte
-    public boolean isStockAlerte(String type) {
+    public boolean isStockAlerte(StockType type) {
         Stock stock = stockRepository.findByType(type)
                 .orElseThrow(() -> new RuntimeException("Type de stock non trouvé: " + type));
         return stock.getQuantite() < stock.getSeuilAlerte();
@@ -93,7 +94,7 @@ public class StockService {
 
     // Supprimer un type de stock
     @Transactional
-    public void deleteStock(String type) {
+    public void deleteStock(StockType type) {
         Stock stock = stockRepository.findByType(type)
                 .orElseThrow(() -> new RuntimeException("Type de stock non trouvé: " + type));
         stockRepository.delete(stock);

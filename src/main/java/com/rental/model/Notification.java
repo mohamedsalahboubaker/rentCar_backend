@@ -1,5 +1,6 @@
 package com.rental.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.rental.model.enums.NotificationType;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -31,6 +32,7 @@ public class Notification {
     @Column(name = "est_lue", columnDefinition = "BOOLEAN DEFAULT FALSE")
     private Boolean estLue = false;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reservation_id")
     private Reservation reservation;

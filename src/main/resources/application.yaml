@@ -6,7 +6,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/car_rental_db
     username: postgres
-    password: postgres
+    password: salah
     driver-class-name: org.postgresql.Driver
 
   # Configuration JPA

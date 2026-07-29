@@ -21,6 +21,10 @@ public class ClientService {
         if (clientRepository.findByTelephone(client.getTelephone()).isPresent()) {
             throw new RuntimeException("Un client avec ce numéro de téléphone existe déjà");
         }
+        // Initialiser reservationCount à 0 si null
+        if (client.getReservationCount() == null) {
+            client.setReservationCount(0);
+        }
         return clientRepository.save(client);
     }
 
@@ -83,6 +87,11 @@ public class ClientService {
     public void incrementReservationCount(Long clientId) {
         Client client = clientRepository.findById(clientId)
                 .orElseThrow(() -> new RuntimeException("Client non trouvé avec l'ID: " + clientId));
+
+        // Si le compteur est null, l'initialiser à 0
+        if (client.getReservationCount() == null) {
+            client.setReservationCount(0);
+        }
         client.setReservationCount(client.getReservationCount() + 1);
         clientRepository.save(client);
     }
@@ -91,6 +100,11 @@ public class ClientService {
     public boolean isEligibleForRemise(Long clientId) {
         Client client = clientRepository.findById(clientId)
                 .orElseThrow(() -> new RuntimeException("Client non trouvé avec l'ID: " + clientId));
+
+        // Si null, retourner false
+        if (client.getReservationCount() == null) {
+            return false;
+        }
         return client.getReservationCount() >= 6;
     }
 }

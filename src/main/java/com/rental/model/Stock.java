@@ -1,7 +1,9 @@
 package com.rental.model;
 
+import com.rental.model.enums.StockType;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import java.time.LocalDateTime;
@@ -11,14 +13,16 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
 public class Stock {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
-    private String type;  // Texte libre : "eau_essuie_glace", "huile", "eau_radiateur", etc.
+    private StockType type;
 
     @Column(nullable = false)
     private Integer quantite = 0;
