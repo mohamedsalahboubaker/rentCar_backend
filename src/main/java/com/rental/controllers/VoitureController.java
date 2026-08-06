@@ -19,21 +19,18 @@ public class VoitureController {
 
     private final VoitureService voitureService;
 
-    // Créer une voiture
     @PostMapping
     public ResponseEntity<Voiture> createVoiture(@RequestBody Voiture voiture) {
         Voiture created = voitureService.createVoiture(voiture);
         return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
 
-    // Récupérer toutes les voitures
     @GetMapping
     public ResponseEntity<List<Voiture>> getAllVoitures() {
         List<Voiture> voitures = voitureService.getAllVoitures();
         return ResponseEntity.ok(voitures);
     }
 
-    // Récupérer une voiture par ID
     @GetMapping("/{id}")
     public ResponseEntity<Voiture> getVoitureById(@PathVariable Long id) {
         Voiture voiture = voitureService.getVoitureById(id)
@@ -41,7 +38,6 @@ public class VoitureController {
         return ResponseEntity.ok(voiture);
     }
 
-    // Récupérer une voiture par matricule
     @GetMapping("/matricule/{matricule}")
     public ResponseEntity<Voiture> getVoitureByMatricule(@PathVariable String matricule) {
         Voiture voiture = voitureService.getVoitureByMatricule(matricule)
@@ -49,35 +45,30 @@ public class VoitureController {
         return ResponseEntity.ok(voiture);
     }
 
-    // Rechercher des voitures par matricule (contient)
     @GetMapping("/search/matricule")
     public ResponseEntity<List<Voiture>> searchVoituresByMatricule(@RequestParam String matricule) {
         List<Voiture> voitures = voitureService.searchVoituresByMatricule(matricule);
         return ResponseEntity.ok(voitures);
     }
 
-    // Rechercher des voitures par nom
     @GetMapping("/search/nom")
     public ResponseEntity<List<Voiture>> searchVoituresByNom(@RequestParam String nom) {
         List<Voiture> voitures = voitureService.searchVoituresByNom(nom);
         return ResponseEntity.ok(voitures);
     }
 
-    // Filtrer les voitures par statut
     @GetMapping("/filter/status")
     public ResponseEntity<List<Voiture>> getVoituresByStatus(@RequestParam VoitureStatus status) {
         List<Voiture> voitures = voitureService.getVoituresByStatus(status);
         return ResponseEntity.ok(voitures);
     }
 
-    // Filtrer les voitures par transmission
     @GetMapping("/filter/transmission")
     public ResponseEntity<List<Voiture>> getVoituresByTransmission(@RequestParam Transmission transmission) {
         List<Voiture> voitures = voitureService.getVoituresByTransmission(transmission);
         return ResponseEntity.ok(voitures);
     }
 
-    // Filtrer les voitures par statut et transmission
     @GetMapping("/filter")
     public ResponseEntity<List<Voiture>> getVoituresByStatusAndTransmission(
             @RequestParam VoitureStatus status,
@@ -86,14 +77,12 @@ public class VoitureController {
         return ResponseEntity.ok(voitures);
     }
 
-    // Mettre à jour une voiture
     @PutMapping("/{id}")
     public ResponseEntity<Voiture> updateVoiture(@PathVariable Long id, @RequestBody Voiture voiture) {
         Voiture updated = voitureService.updateVoiture(id, voiture);
         return ResponseEntity.ok(updated);
     }
 
-    // Mettre à jour le statut d'une voiture
     @PatchMapping("/{id}/status")
     public ResponseEntity<Voiture> updateVoitureStatus(
             @PathVariable Long id,
@@ -102,7 +91,6 @@ public class VoitureController {
         return ResponseEntity.ok(updated);
     }
 
-    // Mettre à jour la date de dernière vidange
     @PatchMapping("/{id}/vidange")
     public ResponseEntity<Voiture> updateDernierVidange(
             @PathVariable Long id,
@@ -111,14 +99,12 @@ public class VoitureController {
         return ResponseEntity.ok(updated);
     }
 
-    // Supprimer une voiture
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteVoiture(@PathVariable Long id) {
         voitureService.deleteVoiture(id);
         return ResponseEntity.noContent().build();
     }
 
-    // Vérifier si une voiture est disponible
     @GetMapping("/{id}/disponible")
     public ResponseEntity<Boolean> isVoitureDisponible(@PathVariable Long id) {
         boolean disponible = voitureService.isVoitureDisponible(id);

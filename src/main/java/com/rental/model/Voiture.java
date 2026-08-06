@@ -29,9 +29,6 @@ public class Voiture {
     @Column(nullable = false, length = 100)
     private String nom;
 
-    @Column(name = "photo_url", length = 255)
-    private String photoUrl;
-
     @Column(nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
     private Transmission transmission;
@@ -52,6 +49,32 @@ public class Voiture {
     @Column(name = "montant_caution")
     private Double montantCaution;
 
+    @Column(name = "nombre_places")
+    private Integer nombrePlaces = 5;
+
+    @Column(name = "nombre_portes")
+    private Integer nombrePortes = 5;
+
+    @Column(name = "nombre_bagages")
+    private Integer nombreBagages = 4;
+
+    @Column(name = "carburant", length = 50)
+    private String carburant;
+
+    @Column(name = "climatisation")
+    private Boolean climatisation = true;
+
+    @Column(name = "airbags")
+    private Boolean airbags = true;
+
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
+
+    @ElementCollection
+    @CollectionTable(name = "voiture_images", joinColumns = @JoinColumn(name = "voiture_id"))
+    @Column(name = "image_data", columnDefinition = "TEXT")
+    private List<String> images = new ArrayList<>();
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
@@ -59,13 +82,17 @@ public class Voiture {
     private LocalDateTime updatedAt;
 
     @JsonIgnore
-
     @OneToMany(mappedBy = "voiture", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Reservation> reservations = new ArrayList<>();
-    @JsonIgnore
 
+    @JsonIgnore
     @OneToMany(mappedBy = "voiture", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<PieceReparee> piecesReparees = new ArrayList<>();
+
+    // ✅ Constructeur avec ID pour les références
+    public Voiture(Long id) {
+        this.id = id;
+    }
 
     @PrePersist
     protected void onCreate() {

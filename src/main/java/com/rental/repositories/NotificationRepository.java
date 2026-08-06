@@ -1,26 +1,30 @@
+// com/rental/repositories/NotificationRepository.java
 package com.rental.repositories;
 
 import com.rental.model.Notification;
-import com.rental.model.enums.NotificationType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
 import java.util.List;
 
 @Repository
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
 
-    // Notifications par destinataire
-    List<Notification> findByDestinataire(String destinataire);
+    // ============================================
+    // ✅ VERSION AVEC @Query (Recommandée)
+    // ============================================
 
-    // Notifications non lues par destinataire
-    List<Notification> findByDestinataireAndEstLueFalse(String destinataire);
+    @Query("SELECT n FROM Notification n ORDER BY n.createdAt DESC")
+    List<Notification> findAllOrderByDateDesc();
 
-    // Notifications par type
-    List<Notification> findByType(NotificationType type);
+    @Query("SELECT n FROM Notification n WHERE n.destinataire = :destinataire ORDER BY n.createdAt DESC")
+    List<Notification> findByDestinataireOrderByDateDesc(@Param("destinataire") String destinataire);
 
-    // Notifications par réservation
-    List<Notification> findByReservationId(Long reservationId);
+    @Query("SELECT n FROM Notification n WHERE n.destinataire = :destinataire AND n.estLue = false ORDER BY n.createdAt DESC")
+    List<Notification> findUnreadByDestinataire(@Param("destinataire") String destinataire);
 
-    // Notifications non lues par type
-    List<Notification> findByTypeAndEstLueFalse(NotificationType type);
+    @Query("SELECT COUNT(n) FROM Notification n WHERE n.destinataire = :destinataire AND n.estLue = false")
+    int countUnreadByDestinataire(@Param("destinataire") String destinataire);
 }

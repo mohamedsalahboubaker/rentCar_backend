@@ -1,10 +1,10 @@
+// com/rental/services/ReservationService.java
 package com.rental.services;
 
 import com.rental.model.Client;
 import com.rental.model.Reservation;
 import com.rental.model.Voiture;
 import com.rental.model.enums.ReservationStatus;
-import com.rental.model.enums.VoitureStatus;
 import com.rental.repositories.ReservationRepository;
 import com.rental.repositories.ClientRepository;
 import com.rental.repositories.VoitureRepository;
@@ -25,7 +25,9 @@ public class ReservationService {
     private final ClientService clientService;
     private final NotificationService notificationService;
 
-    // Créer une réservation
+    // ============================================================
+    // 1. Créer une réservation (SANS changer le statut de la voiture)
+    // ============================================================
     @Transactional
     public Reservation createReservation(Reservation reservation) {
         // Vérifier que la voiture existe
@@ -36,7 +38,7 @@ public class ReservationService {
         Client client = clientRepository.findById(reservation.getClient().getId())
                 .orElseThrow(() -> new RuntimeException("Client non trouvé"));
 
-        // Vérifier la disponibilité de la voiture
+        // Vérifier la disponibilité de la voiture sur la période
         if (!checkCarAvailability(voiture.getId(), reservation.getDateDebut(), reservation.getDateFin())) {
             throw new RuntimeException("La voiture n'est pas disponible sur cette période");
         }
@@ -63,94 +65,130 @@ public class ReservationService {
             notificationService.createRemiseNotification(client, savedReservation);
         }
 
-        // Mettre à jour le statut de la voiture
-        voiture.setStatus(VoitureStatus.LOUE);
-        voitureRepository.save(voiture);
-
+        // ✅ NE PAS CHANGER LE STATUT DE LA VOITURE
         return savedReservation;
     }
 
-    // Vérifier la disponibilité d'une voiture
+    // ============================================================
+    // 2. Vérifier la disponibilité d'une voiture sur une période
+    // ============================================================
     public boolean checkCarAvailability(Long voitureId, LocalDate dateDebut, LocalDate dateFin) {
         List<Reservation> reservations = reservationRepository.findReservationsForCarInPeriod(
                 voitureId, dateDebut, dateFin);
         return reservations.isEmpty();
     }
 
-    // Récupérer toutes les réservations
+    // ============================================================
+    // 3. Vérifier si la voiture est actuellement louée
+    // ============================================================
+    public boolean isCarCurrentlyRented(Long voitureId) {
+        LocalDate today = LocalDate.now();
+        List<Reservation> activeReservations = reservationRepository.findReservationsForCarInPeriod(
+                voitureId, today, today);
+
+        for (Reservation r : activeReservations) {
+            if (r.getStatus() != ReservationStatus.ANNULEE &&
+                    r.getStatus() != ReservationStatus.TERMINEE) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // ============================================================
+    // 4. Récupérer les réservations actives (pour aujourd'hui)
+    // ============================================================
+    public List<Reservation> getActiveReservations() {
+        LocalDate today = LocalDate.now();
+        return reservationRepository.findActiveReservationsForDate(today);
+    }
+
+    // ============================================================
+    // 5. Récupérer les réservations par date
+    // ============================================================
+    public List<Reservation> getReservationsByDate(LocalDate date) {
+        return reservationRepository.findReservationsForDate(date);
+    }
+
+    // ============================================================
+    // 6. Récupérer toutes les réservations
+    // ============================================================
     public List<Reservation> getAllReservations() {
         return reservationRepository.findAll();
     }
 
-    // Récupérer une réservation par ID
+    // ============================================================
+    // 7. Récupérer une réservation par ID
+    // ============================================================
     public Reservation getReservationById(Long id) {
         return reservationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Réservation non trouvée avec l'ID: " + id));
     }
 
-    // Récupérer les réservations par client
+    // ============================================================
+    // 8. Récupérer les réservations par client
+    // ============================================================
     public List<Reservation> getReservationsByClient(Long clientId) {
         return reservationRepository.findByClientId(clientId);
     }
 
-    // Récupérer les réservations par voiture
+    // ============================================================
+    // 9. Récupérer les réservations par voiture
+    // ============================================================
     public List<Reservation> getReservationsByVoiture(Long voitureId) {
         return reservationRepository.findByVoitureId(voitureId);
     }
 
-    // Récupérer les réservations par statut
+    // ============================================================
+    // 10. Récupérer les réservations par statut
+    // ============================================================
     public List<Reservation> getReservationsByStatus(ReservationStatus status) {
         return reservationRepository.findByStatus(status);
     }
 
-    // Récupérer les réservations par période
+    // ============================================================
+    // 11. Récupérer les réservations par période
+    // ============================================================
     public List<Reservation> getReservationsByPeriod(LocalDate start, LocalDate end) {
         return reservationRepository.findByDateDebutBetween(start, end);
     }
 
-    // Mettre à jour le statut d'une réservation
+    // ============================================================
+    // 12. Récupérer les réservations à venir
+    // ============================================================
+    public List<Reservation> getUpcomingReservations() {
+        return reservationRepository.findByDateDebutAfterAndStatus(LocalDate.now(), ReservationStatus.CONFIRMEE);
+    }
+
+    // ============================================================
+    // 13. Mettre à jour le statut d'une réservation
+    // ============================================================
     @Transactional
     public Reservation updateReservationStatus(Long id, ReservationStatus status) {
         Reservation reservation = reservationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Réservation non trouvée avec l'ID: " + id));
 
         reservation.setStatus(status);
-
-        // Si la réservation est annulée ou terminée, remettre la voiture disponible
-        if (status == ReservationStatus.ANNULEE || status == ReservationStatus.TERMINEE) {
-            Voiture voiture = reservation.getVoiture();
-            voiture.setStatus(VoitureStatus.DISPONIBLE);
-            voitureRepository.save(voiture);
-        }
-
         return reservationRepository.save(reservation);
     }
 
-    // Annuler une réservation
+    // ============================================================
+    // 14. Annuler une réservation
+    // ============================================================
     @Transactional
     public void cancelReservation(Long id) {
         Reservation reservation = reservationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Réservation non trouvée avec l'ID: " + id));
 
         reservation.setStatus(ReservationStatus.ANNULEE);
-
-        // Remettre la voiture disponible
-        Voiture voiture = reservation.getVoiture();
-        voiture.setStatus(VoitureStatus.DISPONIBLE);
-        voitureRepository.save(voiture);
-
         reservationRepository.save(reservation);
     }
 
-    // Récupérer les réservations à venir
-    public List<Reservation> getUpcomingReservations() {
-        return reservationRepository.findByDateDebutAfterAndStatus(LocalDate.now(), ReservationStatus.CONFIRMEE);
-    }
-
-    // Recherche avancée
+    // ============================================================
+    // 15. Recherche avancée
+    // ============================================================
     public List<Reservation> advancedSearch(Long clientId, Long voitureId, LocalDate dateDebut, LocalDate dateFin) {
-        // Implémentation d'une recherche avancée
-        // À compléter selon les besoins
+        // Implémentation simplifiée - à améliorer selon les besoins
         return reservationRepository.findAll();
     }
 }

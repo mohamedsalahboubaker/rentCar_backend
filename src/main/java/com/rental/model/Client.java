@@ -51,6 +51,11 @@ public class Client {
     @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Reservation> reservations = new ArrayList<>();
 
+    // ✅ Constructeur avec ID pour les références
+    public Client(Long id) {
+        this.id = id;
+    }
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

@@ -1,127 +1,129 @@
+// com/rental/services/NotificationService.java
 package com.rental.services;
 
 import com.rental.model.Client;
 import com.rental.model.Notification;
 import com.rental.model.Reservation;
-import com.rental.model.enums.NotificationType;
 import com.rental.repositories.NotificationRepository;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor
 public class NotificationService {
 
-    private final NotificationRepository notificationRepository;
+    @Autowired
+    private NotificationRepository notificationRepository;
 
-    // Créer une notification admin pour la remise
     @Transactional
-    public Notification createRemiseNotification(Client client, Reservation reservation) {
-        String message = String.format(
-                "Le client %s %s a effectué sa 6ème réservation (ID: %d). " +
-                        "Il est éligible pour une remise !",
-                client.getNom(),
-                client.getPrenom(),
-                reservation.getId()
-        );
-
-        Notification notification = new Notification();
-        notification.setType(NotificationType.ADMIN_REMISE);
-        notification.setDestinataire("admin");
-        notification.setMessage(message);
-        notification.setReservation(reservation);
-
+    public Notification createNotification(Notification notification) {
+        notification.setCreatedAt(LocalDateTime.now());
+        notification.setEstLue(false);
         return notificationRepository.save(notification);
     }
 
-    // Créer une notification admin pour le stock
-    @Transactional
-    public Notification createStockNotification(String type, Integer quantite) {
-        String message = String.format(
-                "⚠️ ALERTE STOCK : Le stock de '%s' est bas (%d unités restantes). " +
-                        "Veuillez réapprovisionner.",
-                type,
-                quantite
-        );
-
-        Notification notification = new Notification();
-        notification.setType(NotificationType.ADMIN_STOCK);
-        notification.setDestinataire("admin");
-        notification.setMessage(message);
-
-        return notificationRepository.save(notification);
-    }
-
-    // Créer une notification client (rappel WhatsApp)
-    @Transactional
-    public Notification createClientRappelNotification(Client client, Reservation reservation) {
-        String message = String.format(
-                "🔔 RAPPEL : Le client %s %s a une réservation à venir (ID: %d) pour le %s.",
-                client.getNom(),
-                client.getPrenom(),
-                reservation.getId(),
-                reservation.getDateDebut()
-        );
-
-        Notification notification = new Notification();
-        notification.setType(NotificationType.CLIENT_RAPPEL);
-        notification.setDestinataire("client:" + client.getId());
-        notification.setMessage(message);
-        notification.setReservation(reservation);
-
-        return notificationRepository.save(notification);
-    }
-
-    // Récupérer toutes les notifications
+    // ✅ Utiliser findAllOrderByDateDesc()
     public List<Notification> getAllNotifications() {
-        return notificationRepository.findAll();
+        return notificationRepository.findAllOrderByDateDesc();
     }
 
-    // Récupérer les notifications par destinataire
-    public List<Notification> getNotificationsByDestinataire(String destinataire) {
-        return notificationRepository.findByDestinataire(destinataire);
+    // ✅ Utiliser findByDestinataireOrderByDateDesc()
+    public List<Notification> getByDestinataire(String destinataire) {
+        return notificationRepository.findByDestinataireOrderByDateDesc(destinataire);
     }
 
-    // Récupérer les notifications non lues par destinataire
+    // ✅ Utiliser findUnreadByDestinataire()
     public List<Notification> getUnreadNotifications(String destinataire) {
-        return notificationRepository.findByDestinataireAndEstLueFalse(destinataire);
+        return notificationRepository.findUnreadByDestinataire(destinataire);
     }
 
-    // Marquer une notification comme lue
+    // ✅ Utiliser countUnreadByDestinataire()
+    public int countUnread(String destinataire) {
+        return notificationRepository.countUnreadByDestinataire(destinataire);
+    }
+
     @Transactional
-    public Notification markAsRead(Long id) {
+    public void markAsRead(Long id) {
         Notification notification = notificationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Notification non trouvée avec l'ID: " + id));
-
         notification.setEstLue(true);
-        return notificationRepository.save(notification);
+        notificationRepository.save(notification);
     }
 
-    // Marquer toutes les notifications d'un destinataire comme lues
     @Transactional
     public void markAllAsRead(String destinataire) {
-        List<Notification> notifications = notificationRepository.findByDestinataireAndEstLueFalse(destinataire);
+        List<Notification> notifications = notificationRepository.findUnreadByDestinataire(destinataire);
         notifications.forEach(n -> n.setEstLue(true));
         notificationRepository.saveAll(notifications);
     }
 
-    // Compter les notifications non lues
-    public Long countUnreadNotifications(String destinataire) {
-        return notificationRepository.findByDestinataireAndEstLueFalse(destinataire).stream().count();
-    }
-
-    // Supprimer une notification
     @Transactional
     public void deleteNotification(Long id) {
-        Notification notification = notificationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Notification non trouvée avec l'ID: " + id));
-        notificationRepository.delete(notification);
+        notificationRepository.deleteById(id);
     }
 
-    // Récupérer les notifications par type
-    public List<Notification> getNotificationsByType(NotificationType type) {
-        return notificationRepository.findByType(type);
+    // ============================================
+    // ✅ MÉTHODES DE CRÉATION DE NOTIFICATIONS
+    // ============================================
+
+    // Créer une notification de remise avec Client et Reservation
+    public Notification createRemiseNotification(Client client, Reservation reservation) {
+        Notification notification = new Notification();
+        notification.setType("ADMIN_REMISE");
+        notification.setDestinataire("admin");
+        notification.setMessage("🎁 Remise disponible ! Le client " + client.getPrenom() + " " + client.getNom() +
+                " a droit à une remise pour sa " + (client.getReservationCount()) + "ème réservation.");
+        notification.setReservationId(reservation.getId());
+        return createNotification(notification);
+    }
+
+    // Créer une notification de remise avec paramètres simples
+    public Notification createRemiseNotification(String clientNom, String clientPrenom, Long reservationId) {
+        Notification notification = new Notification();
+        notification.setType("ADMIN_REMISE");
+        notification.setDestinataire("admin");
+        notification.setMessage("🎁 Remise disponible ! Le client " + clientPrenom + " " + clientNom +
+                " a droit à une remise pour sa 6ème réservation.");
+        notification.setReservationId(reservationId);
+        return createNotification(notification);
+    }
+
+    // Créer une alerte stock
+    public Notification createStockAlertNotification(String stockType, int quantite, int seuil) {
+        Notification notification = new Notification();
+        notification.setType("ADMIN_STOCK");
+        notification.setDestinataire("admin");
+        notification.setMessage("⚠️ Stock bas ! Le produit " + stockType +
+                " n'a plus que " + quantite + " unités (seuil: " + seuil + ").");
+        return createNotification(notification);
+    }
+
+    // Créer un rappel client
+    public Notification createClientRappelNotification(Client client, Reservation reservation) {
+        Notification notification = new Notification();
+        notification.setType("CLIENT_RAPPEL");
+        notification.setDestinataire("client:" + client.getId());
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        String dateFormatee = reservation.getDateDebut().format(formatter);
+
+        notification.setMessage("📞 Rappel : Le client " + client.getPrenom() + " " + client.getNom() +
+                " a une réservation prévue le " + dateFormatee + ". Pensez à le contacter.");
+        notification.setReservationId(reservation.getId());
+        return createNotification(notification);
+    }
+
+    // Créer un rappel client avec paramètres simples
+    public Notification createClientRappelNotification(Long clientId, String clientNom, String clientPrenom, String date) {
+        Notification notification = new Notification();
+        notification.setType("CLIENT_RAPPEL");
+        notification.setDestinataire("client:" + clientId);
+        notification.setMessage("📞 Rappel : Le client " + clientPrenom + " " + clientNom +
+                " a une réservation prévue le " + date + ". Pensez à le contacter.");
+        return createNotification(notification);
     }
 }

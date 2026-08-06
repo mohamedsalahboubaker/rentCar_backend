@@ -1,6 +1,5 @@
 package com.rental.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.rental.model.enums.ReservationStatus;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -23,8 +22,6 @@ public class Reservation {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "client_id", nullable = false)
     private Client client;
-
-    @JsonIgnore
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "voiture_id", nullable = false)

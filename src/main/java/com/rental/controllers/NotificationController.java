@@ -1,84 +1,72 @@
+// com/rental/controllers/NotificationController.java
 package com.rental.controllers;
 
 import com.rental.model.Notification;
-import com.rental.model.enums.NotificationType;
 import com.rental.services.NotificationService;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 @RestController
-@RequestMapping("/notifications")
-@RequiredArgsConstructor
+@RequestMapping("/notifications")  // ✅ Enlever /api (car déjà dans le context-path)
+@CrossOrigin(origins = "*")
 public class NotificationController {
 
-    private final NotificationService notificationService;
+    @Autowired
+    private NotificationService notificationService;
 
-    // Récupérer toutes les notifications
+    @PostMapping
+    public ResponseEntity<Notification> createNotification(@RequestBody Notification notification) {
+        try {
+            Notification created = notificationService.createNotification(notification);
+            return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
     @GetMapping
     public ResponseEntity<List<Notification>> getAllNotifications() {
         List<Notification> notifications = notificationService.getAllNotifications();
         return ResponseEntity.ok(notifications);
     }
 
-    // Récupérer les notifications par destinataire
     @GetMapping("/destinataire/{destinataire}")
-    public ResponseEntity<List<Notification>> getNotificationsByDestinataire(@PathVariable String destinataire) {
-        List<Notification> notifications = notificationService.getNotificationsByDestinataire(destinataire);
+    public ResponseEntity<List<Notification>> getByDestinataire(@PathVariable String destinataire) {
+        List<Notification> notifications = notificationService.getByDestinataire(destinataire);
         return ResponseEntity.ok(notifications);
     }
 
-    // Récupérer les notifications non lues par destinataire
     @GetMapping("/destinataire/{destinataire}/unread")
-    public ResponseEntity<List<Notification>> getUnreadNotifications(@PathVariable String destinataire) {
+    public ResponseEntity<List<Notification>> getUnread(@PathVariable String destinataire) {
         List<Notification> notifications = notificationService.getUnreadNotifications(destinataire);
         return ResponseEntity.ok(notifications);
     }
 
-    // Récupérer les notifications par type
-    @GetMapping("/type/{type}")
-    public ResponseEntity<List<Notification>> getNotificationsByType(@PathVariable NotificationType type) {
-        List<Notification> notifications = notificationService.getNotificationsByType(type);
-        return ResponseEntity.ok(notifications);
-    }
-
-    // Marquer une notification comme lue
-    @PatchMapping("/{id}/read")
-    public ResponseEntity<Notification> markAsRead(@PathVariable Long id) {
-        Notification notification = notificationService.markAsRead(id);
-        return ResponseEntity.ok(notification);
-    }
-
-    // Marquer toutes les notifications d'un destinataire comme lues
-    @PatchMapping("/destinataire/{destinataire}/read-all")
-    public ResponseEntity<Void> markAllAsRead(@PathVariable String destinataire) {
-        notificationService.markAllAsRead(destinataire);
-        return ResponseEntity.noContent().build();
-    }
-
-    // Compter les notifications non lues
     @GetMapping("/destinataire/{destinataire}/count-unread")
-    public ResponseEntity<Long> countUnreadNotifications(@PathVariable String destinataire) {
-        Long count = notificationService.countUnreadNotifications(destinataire);
+    public ResponseEntity<Integer> countUnread(@PathVariable String destinataire) {
+        int count = notificationService.countUnread(destinataire);
         return ResponseEntity.ok(count);
     }
 
-    // Supprimer une notification
+    @PatchMapping("/{id}/read")
+    public ResponseEntity<Void> markAsRead(@PathVariable Long id) {
+        notificationService.markAsRead(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/destinataire/{destinataire}/read-all")
+    public ResponseEntity<Void> markAllAsRead(@PathVariable String destinataire) {
+        notificationService.markAllAsRead(destinataire);
+        return ResponseEntity.ok().build();
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteNotification(@PathVariable Long id) {
         notificationService.deleteNotification(id);
         return ResponseEntity.noContent().build();
-    }
-
-    // Créer une notification de rappel client (pour WhatsApp)
-    @PostMapping("/client/{clientId}/rappel")
-    public ResponseEntity<Notification> createClientRappel(
-            @PathVariable Long clientId,
-            @RequestParam Long reservationId) {
-        // On suppose que les services sont bien connectés
-        // Cette méthode serait appelée par le service de réservation
-        return new ResponseEntity<>(HttpStatus.CREATED);
     }
 }

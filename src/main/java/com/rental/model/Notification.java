@@ -1,47 +1,34 @@
+// com/rental/models/Notification.java
 package com.rental.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.rental.model.enums.NotificationType;
 import jakarta.persistence.*;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "notification")
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class Notification {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 20)
-    @Enumerated(EnumType.STRING)
-    private NotificationType type;
+    @Column(name = "type", nullable = false)
+    private String type; // ADMIN_REMISE, ADMIN_STOCK, CLIENT_RAPPEL
 
-    @Column(nullable = false, length = 50)
-    private String destinataire;  // 'admin' ou 'client:{id}'
+    @Column(name = "destinataire", nullable = false)
+    private String destinataire; // "admin" ou "client:{id}"
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(name = "message", nullable = false, columnDefinition = "TEXT")
     private String message;
 
-    @Column(name = "est_lue", columnDefinition = "BOOLEAN DEFAULT FALSE")
+    @Column(name = "est_lue")
     private Boolean estLue = false;
 
-    @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "reservation_id")
-    private Reservation reservation;
+    @Column(name = "reservation_id")
+    private Long reservationId;
 
-    @Column(name = "created_at", updatable = false)
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-    }
 }
